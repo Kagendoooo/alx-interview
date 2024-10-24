@@ -1,64 +1,64 @@
 #!/usr/bin/python3
 """
-Reads stdin line by line and computes metrics.
+Log parsing script that reads from stdin and computes metrics
 """
+
 import sys
 import signal
+import re
 
-total_size = 0
-status_codes_count = {
-    200: 0, 301: 0, 400: 0, 401: 0,
-    403: 0, 404: 0, 405: 0, 500: 0
+# Initialize metrics
+total_file_size = 0
+status_code_counts = {
+    "200": 0, "301": 0, "400": 0, "401": 0,
+    "403": 0, "404": 0, "405": 0, "500": 0
 }
 line_count = 0
 
+# Regex pattern to validate and extract data from log lines
+log_pattern = re.compile(
+    r'^(\S+) - \[(.*?)\] "GET /projects/260 HTTP/1.1" (\d{3}) (\d+)$'
+)
 
-def print_stats():
-    """Prints the accumulated statistics."""
-    print(f"File size: {total_size}")
-    for code in sorted(status_codes_count.keys()):
-        if status_codes_count[code] > 0:
-            print(f"{code}: {status_codes_count[code]}")
+
+def print_metrics():
+    """Prints the accumulated metrics."""
+    print(f"File size: {total_file_size}")
+    for code in sorted(status_code_counts.keys()):
+        if status_code_counts[code] > 0:
+            print(f"{code}: {status_code_counts[code]}")
 
 
 def signal_handler(sig, frame):
-    """Handle the signal for CTRL+C (KeyboardInterrupt)."""
-    print_stats()
-    sys.exit(0)
+    """Handles the keyboard interrupt signal to print metrics."""
+    print_metrics()
+    raise KeyboardInterrupt
 
 
+# Set up signal handler for keyboard interrupt (CTRL + C)
 signal.signal(signal.SIGINT, signal_handler)
 
 try:
+    # Reading from stdin
     for line in sys.stdin:
-        print(f"Processing line: {line.strip()}")
-
-        parts = line.split()
-        if len(parts) < 7:
-            print(f"Skipped line (not enough parts): {line.strip()}")
-            continue
-
-        try:
-            status_code = int(parts[-2])
-            file_size = int(parts[-1])
-            print(f"Status code: {status_code}, File size: {file_size}")
-        except (ValueError, IndexError):
-            print(f"Skipped line (parsing error): {line.strip()}")
-            continue
-
-        total_size += file_size
-        print(f"Total file size updated to: {total_size}")
-
-        if status_code in status_codes_count:
-            status_codes_count[status_code] += 1
-            print(f"Status code {status_code} count updated to: "
-                  f"{status_codes_count[status_code]}")
-
         line_count += 1
 
+        # Match the line with the log pattern
+        match = log_pattern.match(line.strip())
+        if match:
+            ip, date, status_code, file_size = match.groups()
+            total_file_size += int(file_size)
+
+            # Count status codes if they are in the predefined set
+            if status_code in status_code_counts:
+                status_code_counts[status_code] += 1
+
+        # Print metrics every 10 lines
         if line_count % 10 == 0:
-            print_stats()
+            print_metrics()
+
+    # After processing all lines, print the final metrics
+    print_metrics()
 
 except KeyboardInterrupt:
-    print_stats()
     sys.exit(0)
