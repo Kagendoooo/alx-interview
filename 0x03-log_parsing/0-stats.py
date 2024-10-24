@@ -1,11 +1,10 @@
 #!/usr/bin/python3
 """
-reads stdin line by line and computes metrics
+Reads stdin line by line and computes metrics.
 """
 import sys
 import signal
 
-# Initialize global variables
 total_size = 0
 status_codes_count = {
     200: 0, 301: 0, 400: 0, 401: 0,
@@ -28,36 +27,38 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
-# Set up signal handler for KeyboardInterrupt (CTRL+C)
 signal.signal(signal.SIGINT, signal_handler)
 
 try:
     for line in sys.stdin:
-        # Split the line into components
+        print(f"Processing line: {line.strip()}")
+
         parts = line.split()
         if len(parts) < 7:
+            print(f"Skipped line (not enough parts): {line.strip()}")
             continue
 
         try:
             status_code = int(parts[-2])
-            file_size = int(parts[-1])    # File size is the last element
+            file_size = int(parts[-1])
+            print(f"Status code: {status_code}, File size: {file_size}")
         except (ValueError, IndexError):
-            continue  # Skip lines that don't match the expected format
+            print(f"Skipped line (parsing error): {line.strip()}")
+            continue
 
-        # Update total file size
         total_size += file_size
+        print(f"Total file size updated to: {total_size}")
 
-        # Update status code count if the status code is valid
         if status_code in status_codes_count:
             status_codes_count[status_code] += 1
+            print(f"Status code {status_code} count updated to: "
+                  f"{status_codes_count[status_code]}")
 
         line_count += 1
 
-        # Print stats every 10 lines
         if line_count % 10 == 0:
             print_stats()
 
 except KeyboardInterrupt:
-    # Print stats when CTRL+C is pressed
     print_stats()
     sys.exit(0)
