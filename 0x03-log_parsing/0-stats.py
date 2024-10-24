@@ -5,7 +5,7 @@ reads stdin line by line and computes metrics
 import sys
 import signal
 
-"""Initialize global variables"""
+
 total_size = 0
 status_codes_count = {
     200: 0, 301: 0, 400: 0, 401: 0,
@@ -28,12 +28,10 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
-"""Set up signal handler for KeyboardInterrupt (CTRL+C)"""
 signal.signal(signal.SIGINT, signal_handler)
 
 try:
     for line in sys.stdin:
-        """Split the line into components"""
         parts = line.split()
         if len(parts) < 7:
             continue
@@ -44,16 +42,13 @@ try:
         except (ValueError, IndexError):
             continue
 
-        """Update total file size"""
         total_size += file_size
 
-        """Update status code count if the status code is valid"""
         if status_code in status_codes_count:
             status_codes_count[status_code] += 1
 
         line_count += 1
 
-        """Print stats every 10 lines"""
         if line_count % 10 == 0:
             print_stats()
 
