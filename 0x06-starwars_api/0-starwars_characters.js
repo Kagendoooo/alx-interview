@@ -25,7 +25,7 @@ request(apiUrl, (error, response, body) => {
     return;
   }
 
-  function fetchCharacter(index) {
+  function fetchCharacter (index) {
     if (index >= characters.length) return;
 
     request(characters[index], (err, res, characterBody) => {
